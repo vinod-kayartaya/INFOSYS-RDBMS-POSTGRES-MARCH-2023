@@ -1,0 +1,315 @@
+# Introduction to PostgreSQL and DDL/DML commands
+
+![](./images/client-server.dio.png)
+
+## What is PostgresSQL?
+
+-   Open source ORDBMS
+-   created in 1986, major changes in 1995 (Postgres95)
+-   Developed by University of California
+-   Support for ANSI standard SQL
+-   complex queries
+-   stored procedure and function
+-   transactions
+
+Apart from the above features, Postgres can also be extended by the users
+
+-   data types
+-   functions
+-   operators
+-   procedure
+-   triggers
+-   index methods
+
+## Database
+
+A collection of related objects such as:
+
+-   tables
+-   views
+-   sequences
+-   indexes
+-   stored procedures
+-   stored functions
+-   triggers
+-   types
+-   operators
+
+```sql
+CREATE DATABASE mydb; -- creates a new database called mydb
+
+\c mydb; -- connecting to mydb
+```
+
+### Tables
+
+-   the fundamental storage unit
+-   consists of rows and columns
+-   all other db objects work with/on the tables
+
+```sql
+CREATE TABLE [IF NOT EXISTS] table_name (
+    column1 datatype([length]) column1_constraints,
+    column2 datatype([length]) column2_constraints,
+    ...
+    table_constraints
+)
+```
+
+### Datatypes in Postgres
+
+-   boolean or bool
+    -   1, yes, y, true, t --> true
+    -   0, no, n, false, f --> false
+-   Characters
+    -   char, varchar, text
+-   Numerics
+    -   integers
+        -   smallint, int, bigint, serial, bigserial
+    -   floating point numbers
+        -   float, real, float8, numeric(p, s)
+-   Temporal data types
+    -   Allow you to store date and/or time
+        -   DATE
+        -   TIME
+        -   TIMESTAMP
+        -   INTERVAL
+            -   interval [fields] [(p)]
+            -   interval '2 months ago'
+            -   interval '3 hours 20 minutes'
+            -   select now() - interval '100 days' as "100 days ago"
+            -   select now() + interval '22 days'
+-   Arrays
+    -   can store collection of strigs, integers, etc. in a single column value
+-   UUID
+    -   we have to enable the "uuid-ossp" module
+    -   `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`
+    -   After that, we can use the function `uuid_generate_v4()`
+-   JSON
+-   HSTORE
+    -   allows you to store key/value pairs as a single column value
+    -   need to enable by creating extension hstore
+
+Example 1 - create a basic table
+
+```sql
+CREATE TABLE persons (
+    id int,
+    name varchar(25),
+    email varchar(255),
+    constraint pk_id primary key (id)
+);
+```
+
+Syntax for inserting a record:
+
+```sql
+INSERT INTO table_name [(column_list)]
+VALUES (value_list);
+
+```
+
+For example,
+
+```sql
+
+INSERT INTO persons VALUES (1, 'Vinod', 'vinod@vinod.co');
+INSERT INTO persons (id, name) VALUES (2, 'Shyam');
+INSERT INTO persons (id, email, name) VALUES (3, 'kumar@xmpl.com', 'Kumar');
+INSERT INTO persons (name, email) VALUES ('John Doe', 'john@xmpl.com'); -- error; primary key constraint failure
+```
+
+To remove a table from the database, use the `DROP TABLE` command
+
+```sql
+DROP TABLE [IF EXISTS] table_name;
+DROP TABLE IF EXISTS persons;
+DROP TABLE persons;
+```
+
+Example 1 - create a basic table with constraints
+
+```sql
+CREATE TABLE customers (
+    id serial primary key,
+    name varchar(25) not null,
+    email varchar(255) not null unique,
+    phone varchar(50),
+    city varchar(50) default 'Bangalore',
+    constraint unq_phone unique(phone)
+);
+```
+
+Add few records to the customers table:
+
+```sql
+INSERT INTO customers (name, email) VALUES ('Vinod Kumar', 'vinod@vinod.co');
+INSERT INTO customers (name, email, phone) VALUES ('Vinod Khanna', 'vinod@xmpl.com', '9879856745');
+INSERT INTO customers (name, email) VALUES ('Shyam Sundar', 'shyam@xmpl.com');
+INSERT INTO customers (name, email) VALUES ('Rajesh Kulkarni', 'rajesh@xmpl.com');
+
+```
+
+The `serial` data type used for primary key creates a new sequence (for example, customers_id_seq). We can find the last produced value from the sequence using this command:
+
+```sql
+select last_value from customers_id_seq;
+```
+
+### Check constraints
+
+-   allow you to specify if value of a coulmn (during insert or update) are as per the condition or not.
+-   can be used both as column level or table level
+
+```sql
+drop table if exists employees;
+
+create table employees (
+    id bigserial primary key,
+    firstname varchar(50) not null,
+    lastname varchar(50),
+    birth_date date,
+    hire_date date,
+    salary numeric(15,2) check (salary>=25000),
+    constraint employees_chk_hire_date_birth_date check (hire_date > birth_date),
+    constraint employees_chk_birth_date  check (birth_date > '1964-01-01')
+);
+
+insert into employees (firstname, lastname, birth_date, hire_date, salary)
+values ('Kishore', 'Kumar', '1975-01-22', '2004-04-01', 67000);
+
+
+insert into employees (firstname, lastname, birth_date, hire_date, salary)
+values ('Ramesh', 'Kumar', '1975-09-22', '1975-04-01', 67000);
+
+insert into employees (firstname, lastname, birth_date, hire_date, salary)
+values ('Ramesh', 'Kumar', '1975-09-22', '2005-04-01', 17000);
+
+insert into employees (firstname, lastname, birth_date, hire_date, salary)
+values ('Ramesh', 'Kumar', '1975-09-22', '2005-04-01', 75000);
+
+select * from employees;
+
+```
+
+### Example of using Array data type in a table
+
+```sql
+CREATE TABLE friends (
+    id serial primary key,
+    name varchar(50) not null,
+    phone_numbers text[]
+);
+
+
+insert into friends (name, phone_numbers)
+    values ( 'Shyam', array['9998877654', '7896547722']),
+        ('Ramesh', '{"7658769871", "7894562341"}');
+
+insert into friends (name, phone_numbers) values ('Vinod', array['9731424784', '9844083934', '8026999190']);
+select name, phone_numbers, phone_numbers[1] as "Primary" , phone_numbers[2] as "Secondary" from friends;
+
+select id, name, unnest(phone_numbers) as phone from friends;
+select id, name from friends where '9731424784' = any(phone_numbers);
+```
+
+### Example of using UUID data type
+
+```sql
+create table users (
+    id uuid primary key,
+    username varchar(50) not null unique,
+    password varchar(255)
+);
+
+create extension if not exists "uuid-ossp";
+
+insert into users values
+(uuid_generate_v4(), 'harish.rao', 'topsecret'),
+(uuid_generate_v4(), 'ramesh.kumar', 'topsecret'),
+(uuid_generate_v4(), 'ravi.ssp', 'topsecret');
+
+```
+
+## JSON - JavaScript Object Notation
+
+-   A standard for data exchange.
+-   https://json.org/
+-   Consists of either an object or an array of values
+-   A value can be one of these:
+    -   string --> data enclosed in double quotation marks
+        -   "Vinod"
+    -   number --> digits consisting of at the max one dot.
+        -   12345.67
+        -   1234
+        -   .34
+    -   array --> a set of comma separated values enclosed in square brackets
+        -   [10, 20, "Vinod", true, [1,2,3], {"x": 39, "y": 44}, null, null, 293]
+        -   []
+        -   [1200]
+        -   [120, 304]
+    -   object --> a set of key/value pairs enclosed with in curly braces
+        -   {"name": "Vinod", "isMarried": true, "address": {"city": "Bangalore", "country": "India"}, "phones": ["9731424784", "9844083934"], "fax": null}
+        -   {}
+        -   {"name": "Vinod"}
+        -   {"name": "Vinod", "age": 49}
+    -   true/false
+    -   null
+
+### Using `json` data type in a table
+
+```sql
+
+CREATE TABLE customer_orders (
+    id serial primary key,
+    order_info json not null
+);
+
+
+INSERT INTO customer_orders (order_info) VALUES
+    ('{"customer_id": 393, "order_date": "2022-10-29", "order_total": 4500}'),
+    ('{"customer_id": 393, "order_date": "2022-12-30", "order_total": 9800}');
+
+
+select * from customer_orders;
+select id, order_info->'order_total' from customer_orders;
+select id, order_info->'order_total' as order_total from customer_orders;
+select id, order_info->'order_date' as order_date, order_info->'order_total' as order_total from customer_orders;
+select id, order_info->>'order_date' as order_date, order_info->'order_total' as order_total from customer_orders;
+
+-- notice the ->> in the last command.
+
+select *from customer_orders where order_info->>'order_date' = '2022-10-29';
+select * from customer_orders where cast(order_info->>'order_total' as numeric) > 5000;
+
+```
+
+### Using the HSTORE data type in a table
+
+```sql
+
+create extension if not exists hstore;
+
+CREATE TABLE books (
+    id serial primary key,
+    title varchar(100) not null,
+    remarks hstore
+);
+
+
+INSERT INTO BOOKS (title, remarks) VALUES
+    ('Let us C', '
+    "author" => "Yashwant Kanitkar",
+    "price" => "299.0",
+    "publisher" => "BPB Publications"
+    '),
+    ('PostgreSQL tutorial', '
+    "author" => "Vinod Kumar K",
+    "price" => "999.0",
+    "publisher" => "KVinod Inc."
+    ');
+
+select id, title, remarks->'author' as author from books;
+select id, title, remarks->'author' as author from books where cast(remarks->'price' as numeric) >500;
+
+```
