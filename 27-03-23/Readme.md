@@ -312,4 +312,158 @@ INSERT INTO BOOKS (title, remarks) VALUES
 select id, title, remarks->'author' as author from books;
 select id, title, remarks->'author' as author from books where cast(remarks->'price' as numeric) >500;
 
+
+```
+
+## UPDATING EXISTING ROWS OF A TABLE
+
+```sql
+    UPDATE table_name
+    SET column1=value1 [, column2=value2, ...] [WHERE condition]
+```
+
+Examples:
+
+```sql
+UPDATE employees SET lastname = 'Kamath'; -- sets the lastname for all employees to 'Kamath'
+UPDATE employees SET lastname = 'Kumar' WHERE id in (1, 4); -- update specific rows based on 'id'
+
+update books set remarks = remarks || '"price"=>"599.0"' where id = 2; -- existing attribute
+update books set remarks = remarks || '"no_of_pages"=>"187"' where id = 2; -- new attribute
+update books set remarks = remarks || '"shipping"=>"free"'; -- new attribute to all rows
+
+select id, title from books where remarks ? 'no_of_pages';
+
+update books set remarks = delete(remarks, 'publisher') where id=1;
+
+```
+
+## Working with Foreign keys
+
+-   Foreign key is a key applied on a child table such that the column on which FK is applied on refers to the values from the parent table's primary key
+-   For example, PROUDCTS is a table that has a column called CATEGORY_ID which is a foreign key to the CATEGORIES table, such that the values of CATEGORY_ID column in the PRODUCTS table, comes from the PRIMARY KEY column of the CATEGORIES table.
+
+SYNTAX:
+
+```sql
+    CONSTRAINT constraint_name
+    FOREIGN KEY (foreign_key_column)
+    REFERENCES parent_table_name [(primary_key_column)]
+    [ON DELETE delete_action]
+    [ON UPDATE update_action]
+```
+
+DELETE_ACTION and UPDATE_ACTION can be one of the following:
+
+-   SET NULL
+-   SET DEFAULT
+-   RESTRICT
+-   NO ACTION
+-   CASCADE
+
+```sql
+
+CREATE TABLE categories(
+    id serial primary key,
+    name varchar(50) not null,
+    description text
+);
+
+CREATE TABLE products (
+    id serial primary key,
+    name varchar(50) not null,
+    unit_price numeric,
+    category_id int,
+    CONSTRAINT FK_PRODUCTS_CATEGORIES FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+
+insert into categories (name) values ('Computer peripherals'), ('Lifystyle products');
+
+insert into products (name, unit_price, category_id) values
+('Samsung Monitor', 8300, 1),
+('Apple magic mouse', 8000, 1),
+('Fire boltt smartwatch', 1800, 2);
+
+
+ALTER TABLE products DROP CONSTRAINT FK_PRODUCTS_CATEGORIES;
+
+ALTER TABLE products
+ADD CONSTRAINT FK_PRODUCTS_CATEGORIES
+FOREIGN KEY (category_id)
+REFERENCES categories
+ON DELETE SET NULL;
+
+delete from categories where id=1;
+-- deletes the record from categories and updates the products.category_id to NULL
+
+
+alter table products drop constraint fk_products_categories;
+
+alter table products add constraint fk_products_categories
+foreign key (category_id) references categories on delete cascade;
+
+delete from categories where id=2;
+-- deletes all records from products where category_id=2 also!!!
+
+-- add a default value to the category_id column in products table
+alter table products
+alter category_id set default 0;
+
+insert into categories values (0, 'Unknown Category', null);
+
+alter table products drop constraint fk_products_categories;
+
+alter table products add constraint fk_products_categories
+foreign key (category_id) references categories on delete set default;
+
+update products set category_id = 3;
+
+delete from categories where id=3;
+-- sets the column products.category_id to 0 (since that is the default value for the column in the table)
+
+alter table products drop constraint fk_products_categories;
+
+alter table products add constraint fk_products_categories
+foreign key (category_id) references categories on delete set default on update cascade;
+
+update categories set id=3 where id=5;
+-- updates all category_id in products table to 3 where it was 5 earlier
+```
+
+### Working with composite primary key (and corresponding foreign key)
+
+```sql
+
+create table t1(
+    c1 int not null,
+    c2 int not null,
+    c3 text,
+    constraint pk_t1 primary key (c1, c2)
+);
+
+insert into t1 values (1, 1, 'one one'), (1, 2, 'one two'), (2, 1, 'two one'), (2, 2, 'two two');
+
+create table t2(
+    id serial primary key,
+    name text,
+    col1 int,
+    col2 int,
+    constraint fk_t1_t2 foreign key (col1, col2) references t1
+);
+
+insert into t2 (name, col1, col2) values
+('a', 1, 1),
+('n', 1, 2),
+('x', 1, 1);
+
+```
+
+
+### Updating JSON fields of a row/column
+
+```sql
+UPDATE customer_orders
+set order_info = jsonb_set(order_info, '{order_status}', '"PENDING"');
+
+-- TBD: create extension for the above to work!
 ```
