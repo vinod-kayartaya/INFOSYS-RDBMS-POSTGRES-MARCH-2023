@@ -1,0 +1,107 @@
+SELECT * FROM PRODUCT_INFO;
+
+INSERT INTO PRODUCT_INFO
+VALUES
+(
+        1,
+        'Chai',
+        700,
+        'Beverages',
+        'Soft drinks, coffees, teas, beers, and ales',
+        'Exotic Liquids',
+        'Charlotte Cooper (Purchasing Manager)'
+    );
+
+drop view if exists usa_customers;
+
+CREATE OR REPLACE VIEW USA_CUSTOMERS AS 
+	select
+	    company_name,
+	    contact_name,
+	    contact_title,
+	    city,
+	    region,
+	    postal_code
+	from customers
+	where country =
+'USA'; 
+
+-- alter view us_customers rename to usa_customers;
+
+select * from usa_customers;
+
+
+
+
+update usa_customers
+set
+    contact_name = 'Robert Miller'
+where
+    upper(company_name) = 'GREAT LAKES FOOD MARKET';
+
+select *
+from customers
+where
+    upper(company_name) = 'GREAT LAKES FOOD MARKET';
+
+CREATE OR REPLACE VIEW BASIC_PRODUCT_INFO_VIEW AS 
+	select
+	    product_name,
+	    unit_price,
+	    units_in_stock,
+	    unit_price * units_in_stock as stock_value
+	from products
+	where
+UNITS_IN_STOCK>0; 
+
+select * from basic_product_info_view order by product_name;
+
+update
+    basic_product_info_view
+set unit_price = 20
+where product_name = 'Chang';
+
+select * from products where product_id=2;
+
+insert into
+    basic_product_info_view (
+        product_name,
+        unit_price,
+        units_in_stock
+    )
+values ('Test product', 200, 123);
+
+CREATE OR REPLACE VIEW BASIC_PRODUCT_INFO_INSERTABLE_VIEW 
+AS 
+	select
+	    product_id,
+	    product_name,
+	    discontinued,
+	    unit_price,
+	    units_in_stock,
+	    unit_price * units_in_stock as stock_value
+	from products
+	where units_in_stock > 0
+	order by
+PRODUCT_ID; 
+
+select *
+from
+    basic_product_info_insertable_view
+order by product_id desc;
+
+insert into
+    basic_product_info_insertable_view (
+        product_id,
+        product_name,
+        discontinued,
+        unit_price,
+        units_in_stock
+    )
+values (
+        112,
+        'Another test product',
+        0,
+        200,
+        123
+    );
