@@ -115,3 +115,84 @@ This is because, the data in the ORDER_DETAILS_VIEW was fetched when the view wa
 ```sql
 REFRESH MATERIALIZED VIEW ORDER_DETAILS_VIEW;
 ```
+
+# Indexes
+
+-   Is a tool (or a db object) that is used for enhancing the database performance.
+-   Helps the database server find specific record/row much faster than if there were no index
+-   Indexes themselves can add write/update/storage overheads.
+    -   Using these indexes must be done with atmost care
+
+SYNTAX:
+
+```sql
+CREATE INDEX index_name ON table_name [USING index_method] (column_name [ASC|DESC] [NULLS {LAST|LAST}], ...)
+```
+
+For example, if we want to speed up the retrieval of customers records while searching by phone number, then we can create an index on the CUSTOMERS table and PHONE column.
+
+Before creating, you can check the server's execution plan for a particular query:
+
+```sql
+EXPLAIN SELECT * FROM CUSTOMERS WHERE PHONE='(5) 555-3932';
+```
+
+Now, let's create the index.
+
+```
+CREATE INDEX customers_phone_idx ON customers(phone);
+```
+
+Now let's check the execution plan again.
+
+```sql
+EXPLAIN SELECT * FROM CUSTOMERS WHERE PHONE='(5) 555-3932';
+```
+
+NOTE: In case you have very small data set, then the server may opt to go sequentially and fetch the data rather than using the index.
+
+For example, in the northwind database, we only have 91 customers, and hence the explain commands result was as shown below, even if the index exists :
+
+```
+                         QUERY PLAN
+------------------------------------------------------------
+ Seq Scan on customers  (cost=0.00..30.50 rows=1 width=108)
+   Filter: ((city)::text = 'Bangalore'::text)
+(2 rows)
+```
+
+But, when we create the index on a customers table of a different database, where there are 1000 records, the output of explain command is like this:
+
+```
+                                      QUERY PLAN
+--------------------------------------------------------------------------------------
+ Index Scan using customers_city_idx on customers  (cost=0.28..8.29 rows=1 width=108)
+   Index Cond: ((city)::text = 'Bangalore'::text)
+(2 rows)
+```
+
+```sql
+-- INDEX IS NOT USED
+select * from customers where city='Bangalore' or country='USA';
+```
+
+Where as
+
+```sql
+-- INDEX IS USED
+select * from customers where city='Bangalore';
+select * from customers where city='Bangalore' and country='USA';
+select * from customers where country='USA' and city='Bangalore';
+```
+
+In order to delete an index, all we have to do is to issue the DROP index command.
+
+```sql
+DROP INDEX customers_city_idx
+```
+
+To list all the indexes that are currently created in the server, issue the command:
+
+```sql
+select tablename, indexname, indexdef from pg_indexes where schemaname='public'
+```
