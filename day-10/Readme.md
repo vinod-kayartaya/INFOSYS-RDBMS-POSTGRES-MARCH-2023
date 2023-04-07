@@ -77,7 +77,7 @@ In PostgreSQL, a view is updatable if it meets the following rules:
 -   The defining query of the view must have exactly one single entry in the FROM clause, which an be a table, or another UPDATABLE VIEW
 -   The defining query must not contain these: GROUP BY, HAVING, LIMIT, OFFSET, DISTINCT, UNION, INTERSECT, EXCEPT
 -   The defining query must not use one of these: any set returning function, any aggregate functions like SUM, AVG, COUNT etgc
--   The underlying must contain all the not-null columns
+-   The underlying query must contain all the not-null columns
 
 For example,
 
