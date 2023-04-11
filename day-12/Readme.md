@@ -152,8 +152,7 @@ END [label_name];
 -   no predefined structure like the rowtype
 -   type is assigned based on the column_list in the SELECT statement
 
-
-For example,
+For example:
 
 ```sql
 DO $$
