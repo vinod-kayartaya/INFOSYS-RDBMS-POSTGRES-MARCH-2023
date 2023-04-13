@@ -104,14 +104,14 @@ END [label_name];
     ```sql
     DO $$
         DECLARE
-            first_name employees.first_name%type;
-            city employees.city%type;
+            v_first_name employees.first_name%type;
+            v_city employees.city%type;
         BEGIN
             select first_name, city
-                into first_name, city
+                into v_first_name, v_city
                 from employees
                 where employee_id = 5;
-            raise info 'The employee whose id is % is % and lives in %', 5, first_name, city;
+            raise info 'The employee whose id is % is % and lives in %', 5, v_first_name, v_city;
         END;
     $$;
     ```
@@ -159,8 +159,8 @@ DO $$
     DECLARE
         emp record;
     BEGIN
-        SELECT first_name, last_name, title_of_courtesy, city
-            INTO emp -- now the structure of emp is decided and will have the child variables: first_name, last_name, title_of_courtesy, city
+        SELECT first_name, last_name, title_of_courtesy, city, country
+            INTO emp -- now the structure of emp is decided and will have the child variables: first_name, last_name, title_of_courtesy, city and country
             FROM employees
             WHERE employee_id=1;
         raise info 'The employee whose id is % is % and lives in % (%)'
