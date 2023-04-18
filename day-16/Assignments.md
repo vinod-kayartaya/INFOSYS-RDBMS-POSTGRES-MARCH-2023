@@ -1,4 +1,4 @@
-# Assignments on TRIGGERS in PostgresSQL
+# Assignments on TRIGGERS in PostgreSQL
 
 1. Create a trigger that prevents the deletion of an order that has already been shipped.
 1. Create a trigger that logs all changes made to the `employees` table in a separate `employee_changes` table, including the user who made the change, the old and new values of the changed field, and the date and time of the change.
