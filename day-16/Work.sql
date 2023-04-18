@@ -104,6 +104,33 @@ WITH RECURSIVE factorial(n, fact) as (
 select n, fact from factorial;
 
 
+---- we want to find the reporting path (using employee ids)
+-- For example: '2 <-- 5 <-- 6'
+
+select employee_Id, first_name, last_name, reports_to from employees;
+
+
+WITH RECURSIVE reporting_chain(employee_id, first_name, last_name, reporting_path) as (
+	-- initial query
+	select employee_id, first_name, last_name, employee_id::text as reporting_path
+		from employees
+		where reports_to is null
+	union all
+	select e.employee_id, e.first_name, e.last_name, 
+		rc.reporting_path || ' <-- ' || e.employee_id as reporting_path
+		from employees e
+		join reporting_chain rc on e.reports_to=rc.employee_id
+)
+select * from reporting_chain rc;
+
+
+
+
+
+
+
+
+
 
 
 
